@@ -1,0 +1,39 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/customcamframe"
+        tools:context=".Custom_CameraActivity" >
+
+    <RelativeLayout
+            android:id="@+id/containerImg"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" >
+
+        <SurfaceView
+                android:id="@+id/surfaceView1"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_centerInParent="true" />
+
+        <ImageView
+                android:id="@+id/imageView1"
+                android:layout_width="346dp"
+                android:layout_height="604dp"
+                android:layout_centerInParent="true"
+                android:src="@drawable/vector_rectangle" />
+
+    </RelativeLayout>
+
+    <Button
+            android:id="@+id/capturebtn"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_marginRight="20dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginBottom="10dp"
+            android:layout_marginTop="20dp"
+            android:layout_gravity="bottom|center_vertical|center_horizontal"
+            android:background="@drawable/ic_camera" />
+
+</FrameLayout>
