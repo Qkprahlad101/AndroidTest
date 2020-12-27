@@ -10,8 +10,6 @@
 package com.labters.documentscanner;
 
 import android.annotation.SuppressLint;
-import android.app.ProgressDialog;
-import android.content.res.AssetFileDescriptor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -19,11 +17,9 @@ import android.graphics.Color;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
-import android.net.Uri;
-import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.StrictMode;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
@@ -36,73 +32,43 @@ import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
-
-import com.androidnetworking.AndroidNetworking;
-import com.androidnetworking.common.Priority;
-import com.androidnetworking.error.ANError;
-import com.androidnetworking.interfaces.JSONObjectRequestListener;
-import com.androidnetworking.interfaces.UploadProgressListener;
-import com.google.android.gms.security.ProviderInstaller;
 import com.labters.documentscanner.base.CropperErrorType;
 import com.labters.documentscanner.base.DocumentScanActivity;
 import com.labters.documentscanner.helpers.ScannerConstants;
 import com.labters.documentscanner.libraries.PolygonView;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
 import org.json.JSONObject;
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
-import org.tensorflow.lite.DataType;
 import org.tensorflow.lite.Interpreter;
-import org.tensorflow.lite.support.common.FileUtil;
-import org.tensorflow.lite.support.common.TensorOperator;
 import org.tensorflow.lite.support.common.TensorProcessor;
-import org.tensorflow.lite.support.common.ops.NormalizeOp;
-import org.tensorflow.lite.support.image.ImageProcessor;
 import org.tensorflow.lite.support.image.TensorImage;
-import org.tensorflow.lite.support.image.ops.ResizeOp;
-import org.tensorflow.lite.support.image.ops.ResizeWithCropOrPadOp;
-import org.tensorflow.lite.support.label.TensorLabel;
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
 
 import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
 
 public class ImageCropActivity extends DocumentScanActivity {
-    private static final String BASE_URL = "https://192.168.238.154:8000/AndroidImage/";
+    private static final String BASE_URL = "http://192.180.1.86:8000/upload/";
     private FrameLayout holderImageCrop;
     private ImageView imageView;
     private PolygonView polygonView;
@@ -145,10 +111,8 @@ public class ImageCropActivity extends DocumentScanActivity {
                                 if (cropImage != null) {
                                     ScannerConstants.selectedImageBitmap = cropImage;
                                     filePath = saveToInternalStorage(cropImage);
-                                    //UploadFile(filePath);
-                                    doFileUpload(filePath);
+                                    connectToServer(cropImage);
                                     setResult(RESULT_OK);
-                                    //doInference();
                                     finish();
                                 }
                             })
@@ -205,81 +169,6 @@ public class ImageCropActivity extends DocumentScanActivity {
             );
         }
     };
-/*
-    private MappedByteBuffer loadModelFile() throws IOException {
-        AssetFileDescriptor assetFileDescriptor = this.getAssets().openFd("mobilenet_model.tflite");
-        FileInputStream fileInputStream = new FileInputStream(assetFileDescriptor.getFileDescriptor());
-        FileChannel fileChannel = fileInputStream.getChannel();
-        long startOffset = assetFileDescriptor.getStartOffset();
-        long length = assetFileDescriptor.getLength();
-        return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, length);
-    }
-
-    public void doInference() {
-        int imageTensorIndex = 0;
-        int[] imageShape = tflite.getInputTensor(imageTensorIndex).shape(); // {1, height, width, 3}
-        imageSizeY = imageShape[1];
-        imageSizeX = imageShape[2];
-        DataType imageDataType = tflite.getInputTensor(imageTensorIndex).dataType();
-
-        int probabilityTensorIndex = 0;
-        int[] probabilityShape =
-                tflite.getOutputTensor(probabilityTensorIndex).shape(); // {1, NUM_CLASSES}
-        DataType probabilityDataType = tflite.getOutputTensor(probabilityTensorIndex).dataType();
-
-        inputImageBuffer = new TensorImage(imageDataType);
-        outputProbabilityBuffer = TensorBuffer.createFixedSize(probabilityShape, probabilityDataType);
-        probabilityProcessor = new TensorProcessor.Builder().add(getPostprocessNormalizeOp()).build();
-
-        inputImageBuffer = loadImage(bitmap);
-
-        tflite.run(inputImageBuffer.getBuffer(),outputProbabilityBuffer.getBuffer().rewind());
-        showresult();
-    }
-
-    private TensorImage loadImage(final Bitmap bitmap) {
-        // Loads bitmap into a TensorImage.
-        inputImageBuffer.load(bitmap);
-
-        // Creates processor for the TensorImage.
-        int cropSize = Math.min(bitmap.getWidth(), bitmap.getHeight());
-        // TODO(b/143564309): Fuse ops inside ImageProcessor.
-        ImageProcessor imageProcessor =
-                new ImageProcessor.Builder()
-                        .add(new ResizeWithCropOrPadOp(cropSize, cropSize))
-                        .add(new ResizeOp(imageSizeX, imageSizeY, ResizeOp.ResizeMethod.NEAREST_NEIGHBOR))
-                        .add(getPreprocessNormalizeOp())
-                        .build();
-        return imageProcessor.process(inputImageBuffer);
-    }
-    private TensorOperator getPreprocessNormalizeOp() {
-        return new NormalizeOp(IMAGE_MEAN, IMAGE_STD);
-    }
-    private TensorOperator getPostprocessNormalizeOp(){
-        return new NormalizeOp(PROBABILITY_MEAN, PROBABILITY_STD);
-    }
-
-    private void showresult(){
-
-        try{
-            labels = FileUtil.loadLabels(this,"newdict.txt");
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-        Map<String, Float> labeledProbability =
-                new TensorLabel(labels, probabilityProcessor.process(outputProbabilityBuffer))
-                        .getMapWithFloatValue();
-        float maxValueInMap =(Collections.max(labeledProbability.values()));
-
-        for (Map.Entry<String, Float> entry : labeledProbability.entrySet()) {
-            if (entry.getValue()==maxValueInMap) {
-                //classitext.setText(entry.getKey());
-                Toast.makeText(this, "NIMA Score: "+entry.getKey(), Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-
- */
 
     private void magicColor() {
         if (!isMagic) {
@@ -381,139 +270,78 @@ public class ImageCropActivity extends DocumentScanActivity {
             Toast.makeText(this, ScannerConstants.imageError, Toast.LENGTH_LONG).show();
             finish();
         }
-
-//        AndroidNetworking.initialize(getApplicationContext());
-
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-//            try {
-//                ProviderInstaller.installIfNeeded(this);
-//            } catch (Exception ignored) {
-//                Log.e("EXCEPTIONNN",ignored.getMessage()+" ");
-//            }
-
-/*
-        try {
-            tflite = new Interpreter(loadModelFile(), null);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
- 
- */
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        StrictMode.setThreadPolicy(policy);
 
     }
 
+    public void connectToServer(Bitmap image){
 
-    public void doFileUpload(String path){
-        path = "D:\\Turtlemint\\Github\\New folder\\QIS_Android\\documentscanner\\src\\main\\res\\mipmap-hdpi\\magic.png";
-        HttpURLConnection conn = null;
-        DataOutputStream dos = null;
-        DataInputStream inStream = null;
-        String lineEnd = "\r\n";
-        int bytesRead, bytesAvailable, bufferSize;
-        byte[] buffer;
-        int maxBufferSize = 1*1024*1024;
-        String urlString = BASE_URL;   // server ip
-        try
-        {
-            //------------------ CLIENT REQUEST
-            FileInputStream fileInputStream = new FileInputStream(new File(path) );
-            // open a URL connection to the Servlet
-            URL url = new URL(urlString);
-            // Open a HTTP connection to the URL
-            conn = (HttpURLConnection) url.openConnection();
-            // Allow Inputs
-            conn.setDoInput(true);
-            // Allow Outputs
-            conn.setDoOutput(true);
-            // Don't use a cached copy.
-            conn.setUseCaches(false);
-            // Use a post method.
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Connection", "Keep-Alive");
-            conn.setRequestProperty("Content-Type", "multipart/form-data;boundary="+"    ");
-            dos = new DataOutputStream( conn.getOutputStream() );
-            dos.writeBytes(lineEnd);
-            dos.writeBytes("Content-Disposition: form-data; name=\"uploadedfile\";filename=\"" + path + "\"" + lineEnd);
-            dos.writeBytes(lineEnd);
+        String postUrl= "http://192.180.1.86:8000/";
+        MultipartBody.Builder multipartBodyBuilder = new MultipartBody.Builder().setType(MultipartBody.FORM);
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        image.compress(Bitmap.CompressFormat.JPEG,100,byteArrayOutputStream);
+        byte[] imageByte = byteArrayOutputStream.toByteArray();
+        multipartBodyBuilder.addFormDataPart("image", "Hello.jpg", RequestBody.create(MediaType.parse("image/*jpg"), imageByte));
 
-            // create a buffer of maximum size
-            bytesAvailable = fileInputStream.available();
-            bufferSize = Math.min(bytesAvailable, maxBufferSize);
-            buffer = new byte[bufferSize];
-
-            // read file and write it into form...
-            bytesRead = fileInputStream.read(buffer, 0, bufferSize);
-            while (bytesRead > 0)
-            {
-                dos.write(buffer, 0, bufferSize);
-                bytesAvailable = fileInputStream.available();
-                bufferSize = Math.min(bytesAvailable, maxBufferSize);
-                bytesRead = fileInputStream.read(buffer, 0, bufferSize);
-            }
-
-            // send multipart form data necesssary after file data...
-            dos.writeBytes(lineEnd);
-            dos.writeBytes(lineEnd);
-
-            // close streams
-            Log.e("Debug","File is written");
-            fileInputStream.close();
-            dos.flush();
-            dos.close();
-        }
-        catch (MalformedURLException ex)
-        {
-            Log.e("Debug", "error: " + ex.getMessage(), ex);
-        }
-        catch (IOException ioe)
-        {
-            Log.e("Debug", "error: " + ioe.getMessage(), ioe);
-        }
-
-        //------------------ read the SERVER RESPONSE
-        try {
-            inStream = new DataInputStream ( conn.getInputStream() );
-            String str;
-            while (( str = inStream.readLine()) != null)
-            {
-                Log.e("Debug","Server Response "+str);
-            }
-            inStream.close();
-        }
-        catch (IOException ioex){
-            Log.e("Debug", "error: " + ioex.getMessage(), ioex);
-        }
+        RequestBody postBodyImage = multipartBodyBuilder.build();
+        postRequest(postUrl, postBodyImage);
     }
 
-//    public void UploadFile(String filePath) {
-//        File file = new File(filePath);
-//
-//        AndroidNetworking.upload(BASE_URL)
-//                .addMultipartFile("image", file)
-//                .setPriority(Priority.HIGH)
-//                .build()
-//                .setUploadProgressListener(new UploadProgressListener() {
-//                    @Override
-//                    public void onProgress(long bytesUploaded, long totalBytes) {
-//                        // do anything with progress
-//                    }
-//                })
-//                .getAsJSONObject(new JSONObjectRequestListener() {
-//                    @Override
-//                    public void onResponse(JSONObject response) {
-//                        // do anything with response
-//                        Toast.makeText(ImageCropActivity.this, "Success: "+response, Toast.LENGTH_SHORT).show();
-//                    }
-//                    @Override
-//                    public void onError(ANError error) {
-//                        // handle error
-//                        Toast.makeText(ImageCropActivity.this, "Error Occured: "+error, Toast.LENGTH_SHORT).show();
-//                    }
-//                });
-//
-//
-//    }
+    void postRequest(String postUrl, RequestBody postBody) {
 
+        OkHttpClient client = new OkHttpClient();
+
+        Request request = new Request.Builder()
+                .url(postUrl)
+                .post(postBody)
+                .build();
+
+        client.newCall(request).enqueue(new okhttp3.Callback() {
+            @Override
+            public void onFailure(okhttp3.Call call, IOException e) {
+                call.cancel();
+                Log.d("Error", "onFailure: "+e);
+                //System.out.println("============================================"+e+"============================================");
+              // In order to access the TextView inside the UI thread, the code is executed inside runOnUiThread()
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(ImageCropActivity.this,"Failed", Toast.LENGTH_SHORT).show();
+                        //responseText.setText("Failed to Connect to Server");
+                    }
+                });
+            }
+
+            @Override
+            public void onResponse(okhttp3.Call call, final okhttp3.Response response) throws IOException {
+                // In order to access the TextView inside the UI thread, the code is executed inside runOnUiThread()
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        //TextView responseText = findViewById(R.id.responseText);
+                        try {
+
+                            Toast.makeText(ImageCropActivity.this,"Successful", Toast.LENGTH_SHORT).show();
+
+                            JSONObject obj = new JSONObject(response.body().string());
+                            String result = (String) obj.get("result");
+
+                            byte[] encodedString = Base64.decode((String) obj.get("byte"), Base64.DEFAULT);
+
+                            Bitmap decodedByte = BitmapFactory.decodeByteArray(encodedString, 0, encodedString.length);
+                            //imageView.setImageBitmap(decodedByte);
+                            //responseText.setText(result);
+
+                        } catch (Exception e) {
+                            System.out.println("++++++INSIDE CATCH______");
+                            e.printStackTrace();
+                        }
+                    }
+                });
+            }
+        });
+    }
 
     @Override
     protected FrameLayout getHolderImageCrop() {
@@ -636,55 +464,5 @@ public class ImageCropActivity extends DocumentScanActivity {
         }
         return myDir.getAbsolutePath()+imageFileName;
     }
-
-//    private void upload() {
-//        // Image location URL
-//        // Image
-//        ByteArrayOutputStream bao = new ByteArrayOutputStream();
-//        cropImage.compress(Bitmap.CompressFormat.JPEG, 90, bao);
-//        byte[] ba = bao.toByteArray();
-//        ba1 = Base64.encodeToString(ba, Base64.DEFAULT);
-//
-//        Log.e("base64", "-----" + ba1);
-//
-//        // Upload image to server
-//        new uploadToServer().execute();
-//
-//    }
-//
-//    public class uploadToServer extends AsyncTask<Void, Void, String> {
-//
-//        private ProgressDialog pd = new ProgressDialog(ImageCropActivity.this);
-//        protected void onPreExecute() {
-//            super.onPreExecute();
-//            pd.setMessage("Wait image uploading!");
-//            pd.show();
-//        }
-//    protected String doInBackground(Void... params) {
-//
-//        ArrayList<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
-//        nameValuePairs.add(new BasicNameValuePair("base64", ba1));
-//        nameValuePairs.add(new BasicNameValuePair("ImageName", System.currentTimeMillis() + ".jpg"));
-//        try {
-//            HttpClient httpclient = new DefaultHttpClient();
-//            HttpPost httppost = new HttpPost(URL);
-//            httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-//            HttpResponse response = httpclient.execute(httppost);
-//            String st = EntityUtils.toString(response.getEntity());
-//            Log.v("log_tag", "In the try Loop" + st);
-//
-//        } catch (Exception e) {
-//            Log.v("log_tag", "Error in http connection " + e.toString());
-//        }
-//        return "Success";
-//
-//    }
-//
-//    protected void onPostExecute(String result) {
-//        super.onPostExecute(result);
-//        pd.hide();
-//        pd.dismiss();
-//    }
-//}
 
 }
