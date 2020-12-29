@@ -12,6 +12,7 @@ import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.hardware.Camera;
+import android.hardware.camera2.CameraManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -63,13 +64,12 @@ public class CameraOverlay extends SurfaceView implements SurfaceHolder.Callback
             camera.setDisplayOrientation(0);
             params.setRotation(0);
         }
-        params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
         //best quality images ( currently in my phone 3000x4000 resolution )
 
         /* Usable Parameters
+        params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
         params = mCamera.getParameters();
         params.setFlashMode(Camera.Parameters.FLASH_MODE_AUTO);
-        params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
         params.setSceneMode(Camera.Parameters.SCENE_MODE_AUTO);
         params.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_AUTO);
         params.setExposureCompensation(0);
@@ -77,6 +77,7 @@ public class CameraOverlay extends SurfaceView implements SurfaceHolder.Callback
         params.setJpegQuality(100);
         params.setRotation(90);
          */
+        params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
         params.setJpegQuality(100);
         params.setFlashMode(Camera.Parameters.FLASH_MODE_AUTO);
         params.setExposureCompensation(0);
@@ -93,31 +94,8 @@ public class CameraOverlay extends SurfaceView implements SurfaceHolder.Callback
 
         relativeLayout = findViewById(R.id.containerImg);
 
-        cameraSurfaceView.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                setCamFocusMode();
-            }
-        });
-
     }
 
-    private void setCamFocusMode(){
-
-        if(camera == null) {
-            return;
-        }
-        /* Set Auto focus */
-        Camera.Parameters parameters = camera.getParameters();
-        List<String>    focusModes = parameters.getSupportedFocusModes();
-        if(focusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)){
-            parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
-        } else
-        if(focusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)){
-            parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
-        }
-        camera.setParameters(parameters);
-    }
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {

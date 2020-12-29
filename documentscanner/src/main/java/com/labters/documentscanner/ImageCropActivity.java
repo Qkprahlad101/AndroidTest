@@ -19,6 +19,7 @@ import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.StrictMode;
 import android.util.Base64;
 import android.util.Log;
@@ -89,7 +90,7 @@ public class ImageCropActivity extends DocumentScanActivity {
     private static final float PROBABILITY_STD = 255.0f;
     private Bitmap bitmap;
     private List<String> labels;
-    String ba1;
+    String imageFileName;
     String filePath;
 
 
@@ -282,7 +283,7 @@ public class ImageCropActivity extends DocumentScanActivity {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         image.compress(Bitmap.CompressFormat.JPEG,100,byteArrayOutputStream);
         byte[] imageByte = byteArrayOutputStream.toByteArray();
-        multipartBodyBuilder.addFormDataPart("image", "Hello.jpg", RequestBody.create(MediaType.parse("image/*jpg"), imageByte));
+        multipartBodyBuilder.addFormDataPart("image", imageFileName, RequestBody.create(MediaType.parse("image/*jpg"), imageByte));
 
         RequestBody postBodyImage = multipartBodyBuilder.build();
         postRequest(postUrl, postBodyImage);
@@ -322,10 +323,21 @@ public class ImageCropActivity extends DocumentScanActivity {
                         //TextView responseText = findViewById(R.id.responseText);
                         try {
 
-                            Toast.makeText(ImageCropActivity.this,"Successful", Toast.LENGTH_SHORT).show();
+                            //Toast.makeText(ImageCropActivity.this,"Successful", Toast.LENGTH_SHORT).show();
 
                             JSONObject obj = new JSONObject(response.body().string());
                             String result = (String) obj.get("result");
+                            double nima_score = (double)obj.get("nima_score");
+
+                            new Handler().postDelayed(new Runnable() {
+
+                                @Override
+                                public void run() {
+                                    Toast.makeText(ImageCropActivity.this,
+                                            "Nima Score: "+nima_score,
+                                            Toast.LENGTH_LONG).show();
+                                }
+                            }, 2000);
 
                             byte[] encodedString = Base64.decode((String) obj.get("byte"), Base64.DEFAULT);
 
@@ -447,7 +459,7 @@ public class ImageCropActivity extends DocumentScanActivity {
         if (!myDir.exists())
             myDir.mkdirs();
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-        String imageFileName = "turtledoc_" + timeStamp + ".jpg";
+        imageFileName = "turtledoc_" + timeStamp + ".jpg";
         File mypath = new File(myDir, imageFileName);
         FileOutputStream fos = null;
         try {

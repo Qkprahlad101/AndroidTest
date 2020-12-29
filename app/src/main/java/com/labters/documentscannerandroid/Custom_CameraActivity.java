@@ -2,13 +2,17 @@ package com.labters.documentscannerandroid;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.hardware.Camera;
 import android.hardware.Camera.PictureCallback;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -16,8 +20,10 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 
 import com.labters.documentscanner.ImageCropActivity;
 import com.labters.documentscanner.helpers.ScannerConstants;
@@ -40,8 +46,11 @@ public class Custom_CameraActivity extends Activity {
     CameraOverlay cameraOverlay;
     FrameLayout frameLayout;
     Button btnCapture;
-    File image;
+    CameraManager cameraManager;
+    Button flash;
+    Integer i=0;
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,13 +60,18 @@ public class Custom_CameraActivity extends Activity {
         cameraOverlay = new CameraOverlay(this, camera);
         frameLayout.addView(cameraOverlay);
         btnCapture = findViewById(R.id.capturebtn);
+        flash = findViewById(R.id.flashbtn);
+        cameraManager = (CameraManager) getSystemService(CAMERA_SERVICE);
+
         btnCapture.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 onCapture(v);
             }
         });
+
     }
+
 
     PictureCallback cameraPictureCallbackJpeg = new PictureCallback() {
         @Override
