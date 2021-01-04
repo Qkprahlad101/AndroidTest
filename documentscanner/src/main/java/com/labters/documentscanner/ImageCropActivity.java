@@ -335,15 +335,15 @@ public class ImageCropActivity extends DocumentScanActivity {
                             }else{
                                 Toast.makeText(ImageCropActivity.this, "Capture Image Again.", Toast.LENGTH_SHORT).show();
                             }
-                            new Handler().postDelayed(new Runnable() {
-
-                                @Override
-                                public void run() {
-                                    Toast.makeText(ImageCropActivity.this,
-                                            "Nima Score: "+nima_score,
-                                            Toast.LENGTH_LONG).show();
-                                }
-                            }, 2000);
+//                            new Handler().postDelayed(new Runnable() {
+//
+//                                @Override
+//                                public void run() {
+//                                    Toast.makeText(ImageCropActivity.this,
+//                                            "Nima Score: "+nima_score,
+//                                            Toast.LENGTH_LONG).show();
+//                                }
+//                            }, 2000);
 
                             byte[] encodedString = Base64.decode((String) obj.get("byte"), Base64.DEFAULT);
 
@@ -384,7 +384,18 @@ public class ImageCropActivity extends DocumentScanActivity {
         try {
             response = client.newCall(request).execute();
             String resStr = response.body().string();
-            Toast.makeText(this, "Response from main Api: "+resStr, Toast.LENGTH_SHORT).show();
+
+            //Toast.makeText(this, "Response from main Api: "+resStr, Toast.LENGTH_SHORT).show();
+            Log.d("mainAPI", "sendToMainApi: "+resStr);
+            new Handler().postDelayed(new Runnable() {
+
+                @Override
+                public void run() {
+                    Toast.makeText(ImageCropActivity.this,
+                            "Response:  "+resStr,
+                            Toast.LENGTH_LONG).show();
+                }
+            }, 2000);
 
         } catch (IOException e) {
             e.printStackTrace();
