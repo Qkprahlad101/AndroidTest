@@ -17,6 +17,7 @@ import android.graphics.Color;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -38,6 +39,7 @@ import com.labters.documentscanner.base.DocumentScanActivity;
 import com.labters.documentscanner.helpers.ScannerConstants;
 import com.labters.documentscanner.libraries.PolygonView;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
@@ -50,9 +52,14 @@ import org.tensorflow.lite.support.image.TensorImage;
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
 
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.MappedByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -67,6 +74,7 @@ import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class ImageCropActivity extends DocumentScanActivity {
     private static final String BASE_URL = "http://192.180.1.86:8000/upload/";
@@ -227,7 +235,6 @@ public class ImageCropActivity extends DocumentScanActivity {
                 Imgproc.GaussianBlur(source, destination, new Size(0, 0), 10);
                 Core.addWeighted(source, 1.5, destination, -0.5, 0, destination);
                 Utils.bitmapToMat(bmpMonochrome, destination);
-                //               cropImage = bmpMonochrome.copy(bmpMonochrome.getConfig(), true);
                 isSharp = !isSharp;
             } catch (Exception e) {
             }
@@ -303,32 +310,31 @@ public class ImageCropActivity extends DocumentScanActivity {
             public void onFailure(okhttp3.Call call, IOException e) {
                 call.cancel();
                 Log.d("Error", "onFailure: "+e);
-                //System.out.println("============================================"+e+"============================================");
-              // In order to access the TextView inside the UI thread, the code is executed inside runOnUiThread()
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Toast.makeText(ImageCropActivity.this,"Failed", Toast.LENGTH_SHORT).show();
-                        //responseText.setText("Failed to Connect to Server");
+                        Toast.makeText(ImageCropActivity.this,"Failed to connect to Server.", Toast.LENGTH_SHORT).show();
                     }
                 });
             }
 
             @Override
             public void onResponse(okhttp3.Call call, final okhttp3.Response response) throws IOException {
-                // In order to access the TextView inside the UI thread, the code is executed inside runOnUiThread()
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        //TextView responseText = findViewById(R.id.responseText);
                         try {
-
-                            //Toast.makeText(ImageCropActivity.this,"Successful", Toast.LENGTH_SHORT).show();
 
                             JSONObject obj = new JSONObject(response.body().string());
                             String result = (String) obj.get("result");
                             double nima_score = (double)obj.get("nima_score");
 
+                            if(nima_score>4.0){
+                                //saveToInternalStorage(cropImage);
+                                sendToMainApi();
+                            }else{
+                                Toast.makeText(ImageCropActivity.this, "Capture Image Again.", Toast.LENGTH_SHORT).show();
+                            }
                             new Handler().postDelayed(new Runnable() {
 
                                 @Override
@@ -341,9 +347,8 @@ public class ImageCropActivity extends DocumentScanActivity {
 
                             byte[] encodedString = Base64.decode((String) obj.get("byte"), Base64.DEFAULT);
 
+                            //To get the uploaded image back here
                             Bitmap decodedByte = BitmapFactory.decodeByteArray(encodedString, 0, encodedString.length);
-                            //imageView.setImageBitmap(decodedByte);
-                            //responseText.setText(result);
 
                         } catch (Exception e) {
                             System.out.println("++++++INSIDE CATCH______");
@@ -353,6 +358,37 @@ public class ImageCropActivity extends DocumentScanActivity {
                 });
             }
         });
+    }
+
+    public void sendToMainApi(){
+        JSONObject data = new JSONObject();
+        try{
+            data.put("fileid",imageFileName);
+            data.put("vertical","FW");
+            data.put("tag","previous_policy");
+            data.put("prev_claim",false);
+            data.put("regno","");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        OkHttpClient client = new OkHttpClient();
+        MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+        // put your json here
+        RequestBody body = RequestBody.create(JSON, data.toString());
+        Request request = new Request.Builder()
+                .url("http://192.180.1.86:7000/api/qis/generate_quote/")
+                .post(body)
+                .build();
+
+        Response response = null;
+        try {
+            response = client.newCall(request).execute();
+            String resStr = response.body().string();
+            Toast.makeText(this, "Response from main Api: "+resStr, Toast.LENGTH_SHORT).show();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override

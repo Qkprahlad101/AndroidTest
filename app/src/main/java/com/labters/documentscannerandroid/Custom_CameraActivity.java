@@ -47,8 +47,6 @@ public class Custom_CameraActivity extends Activity {
     FrameLayout frameLayout;
     Button btnCapture;
     CameraManager cameraManager;
-    Button flash;
-    Integer i=0;
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
@@ -60,7 +58,6 @@ public class Custom_CameraActivity extends Activity {
         cameraOverlay = new CameraOverlay(this, camera);
         frameLayout.addView(cameraOverlay);
         btnCapture = findViewById(R.id.capturebtn);
-        flash = findViewById(R.id.flashbtn);
         cameraManager = (CameraManager) getSystemService(CAMERA_SERVICE);
 
         btnCapture.setOnClickListener(new View.OnClickListener() {
