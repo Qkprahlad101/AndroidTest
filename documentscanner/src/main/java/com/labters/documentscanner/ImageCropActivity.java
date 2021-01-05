@@ -10,6 +10,7 @@
 package com.labters.documentscanner;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -32,6 +33,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.labters.documentscanner.base.CropperErrorType;
@@ -39,6 +41,7 @@ import com.labters.documentscanner.base.DocumentScanActivity;
 import com.labters.documentscanner.helpers.ScannerConstants;
 import com.labters.documentscanner.libraries.PolygonView;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.opencv.android.Utils;
@@ -65,6 +68,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -101,6 +105,8 @@ public class ImageCropActivity extends DocumentScanActivity {
     String imageFileName;
     String filePath;
 
+    String resStr;
+    double nima_score;
 
     private OnClickListener btnImageEnhanceClick = new OnClickListener() {
         @Override
@@ -120,14 +126,43 @@ public class ImageCropActivity extends DocumentScanActivity {
                                 if (cropImage != null) {
                                     ScannerConstants.selectedImageBitmap = cropImage;
                                     filePath = saveToInternalStorage(cropImage);
-                                    connectToServer(cropImage);
-                                    setResult(RESULT_OK);
-                                    finish();
+
+                                    new MyAsyncTask().execute();
+
+//                                    setResult(RESULT_OK);
+//                                    finish();
                                 }
                             })
             );
         }
     };
+
+    private class MyAsyncTask extends AsyncTask<Void, Void, Void>
+    {
+        @Override
+        protected Void doInBackground(Void... params) {
+
+            connectToServer(cropImage);
+            try {
+                TimeUnit.SECONDS.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+        @Override
+        protected void onPostExecute(Void result) {
+            Intent intent = new Intent(ImageCropActivity.this, data_table.class);
+            intent.putExtra("response", resStr);
+            intent.putExtra("nima", Double.toString(nima_score));
+
+            setResult(RESULT_OK);
+            startActivityForResult(intent, 1234);
+            finish();
+        }
+    }
+
     private OnClickListener btnRebase = v -> {
         cropImage = ScannerConstants.selectedImageBitmap.copy(ScannerConstants.selectedImageBitmap.getConfig(), true);
         isInverted = false;
@@ -272,6 +307,7 @@ public class ImageCropActivity extends DocumentScanActivity {
         isInverted = false;
         isMagic = false;
         isSharp = false;
+
         if (ScannerConstants.selectedImageBitmap != null)
             initView();
         else {
@@ -327,7 +363,8 @@ public class ImageCropActivity extends DocumentScanActivity {
 
                             JSONObject obj = new JSONObject(response.body().string());
                             String result = (String) obj.get("result");
-                            double nima_score = (double)obj.get("nima_score");
+                            nima_score = (double)obj.get("nima_score");
+                            Toast.makeText(ImageCropActivity.this, "Nima Score: "+nima_score, Toast.LENGTH_SHORT).show();
 
                             if(nima_score>4.0){
                                 //saveToInternalStorage(cropImage);
@@ -360,7 +397,7 @@ public class ImageCropActivity extends DocumentScanActivity {
         });
     }
 
-    public void sendToMainApi(){
+    public void sendToMainApi() throws IOException, JSONException {
         JSONObject data = new JSONObject();
         try{
             data.put("fileid",imageFileName);
@@ -380,13 +417,14 @@ public class ImageCropActivity extends DocumentScanActivity {
                 .post(body)
                 .build();
 
-        Response response = null;
-        try {
+            Response response = null;
             response = client.newCall(request).execute();
-            String resStr = response.body().string();
+            resStr = response.body().string();
+            JSONObject Jobject = new JSONObject(resStr);
+//            JSONArray name = Jobject.getJSONArray("filename");
 
             //Toast.makeText(this, "Response from main Api: "+resStr, Toast.LENGTH_SHORT).show();
-            Log.d("mainAPI", "sendToMainApi: "+resStr);
+            Log.d("mainAPI", "sendToMainApi: "+Jobject);
             new Handler().postDelayed(new Runnable() {
 
                 @Override
@@ -395,11 +433,7 @@ public class ImageCropActivity extends DocumentScanActivity {
                             "Response:  "+resStr,
                             Toast.LENGTH_LONG).show();
                 }
-            }, 2000);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+            }, 4000);
     }
 
     @Override
