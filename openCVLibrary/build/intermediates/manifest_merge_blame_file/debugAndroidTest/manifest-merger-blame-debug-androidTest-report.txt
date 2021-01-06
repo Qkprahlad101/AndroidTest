@@ -1,0 +1,48 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="org.opencv.test" >
+4
+5    <uses-sdk
+5-->/Users/prahlad_kumar/Desktop/QIS_Android_Updated/openCVLibrary/build/intermediates/tmp/manifest/androidTest/debug/manifestMerger8680942950795979995.xml:5:5-74
+6        android:minSdkVersion="15"
+6-->/Users/prahlad_kumar/Desktop/QIS_Android_Updated/openCVLibrary/build/intermediates/tmp/manifest/androidTest/debug/manifestMerger8680942950795979995.xml:5:15-41
+7        android:targetSdkVersion="27" />
+7-->/Users/prahlad_kumar/Desktop/QIS_Android_Updated/openCVLibrary/build/intermediates/tmp/manifest/androidTest/debug/manifestMerger8680942950795979995.xml:5:42-71
+8
+9    <instrumentation
+9-->/Users/prahlad_kumar/Desktop/QIS_Android_Updated/openCVLibrary/build/intermediates/tmp/manifest/androidTest/debug/manifestMerger8680942950795979995.xml:11:5-15:65
+10        android:name="android.test.InstrumentationTestRunner"
+10-->/Users/prahlad_kumar/Desktop/QIS_Android_Updated/openCVLibrary/build/intermediates/tmp/manifest/androidTest/debug/manifestMerger8680942950795979995.xml:11:22-75
+11        android:functionalTest="false"
+11-->/Users/prahlad_kumar/Desktop/QIS_Android_Updated/openCVLibrary/build/intermediates/tmp/manifest/androidTest/debug/manifestMerger8680942950795979995.xml:14:22-52
+12        android:handleProfiling="false"
+12-->/Users/prahlad_kumar/Desktop/QIS_Android_Updated/openCVLibrary/build/intermediates/tmp/manifest/androidTest/debug/manifestMerger8680942950795979995.xml:13:22-53
+13        android:label="Tests for org.opencv.test"
+13-->/Users/prahlad_kumar/Desktop/QIS_Android_Updated/openCVLibrary/build/intermediates/tmp/manifest/androidTest/debug/manifestMerger8680942950795979995.xml:15:22-63
+14        android:targetPackage="org.opencv.test" />
+14-->/Users/prahlad_kumar/Desktop/QIS_Android_Updated/openCVLibrary/build/intermediates/tmp/manifest/androidTest/debug/manifestMerger8680942950795979995.xml:12:22-61
+15
+16    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+16-->[:openCVLibrary] /Users/prahlad_kumar/Desktop/QIS_Android_Updated/openCVLibrary/build/intermediates/library_manifest/debug/AndroidManifest.xml:11:5-80
+16-->[:openCVLibrary] /Users/prahlad_kumar/Desktop/QIS_Android_Updated/openCVLibrary/build/intermediates/library_manifest/debug/AndroidManifest.xml:11:22-77
+17    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+17-->[:openCVLibrary] /Users/prahlad_kumar/Desktop/QIS_Android_Updated/openCVLibrary/build/intermediates/library_manifest/debug/AndroidManifest.xml:12:5-81
+17-->[:openCVLibrary] /Users/prahlad_kumar/Desktop/QIS_Android_Updated/openCVLibrary/build/intermediates/library_manifest/debug/AndroidManifest.xml:12:22-78
+18
+19    <uses-feature android:name="android.hardware.camera" />
+19-->[:openCVLibrary] /Users/prahlad_kumar/Desktop/QIS_Android_Updated/openCVLibrary/build/intermediates/library_manifest/debug/AndroidManifest.xml:14:5-60
+19-->[:openCVLibrary] /Users/prahlad_kumar/Desktop/QIS_Android_Updated/openCVLibrary/build/intermediates/library_manifest/debug/AndroidManifest.xml:14:19-57
+20
+21    <uses-permission android:name="android.permission.CAMERA" />
+21-->[:openCVLibrary] /Users/prahlad_kumar/Desktop/QIS_Android_Updated/openCVLibrary/build/intermediates/library_manifest/debug/AndroidManifest.xml:16:5-65
+21-->[:openCVLibrary] /Users/prahlad_kumar/Desktop/QIS_Android_Updated/openCVLibrary/build/intermediates/library_manifest/debug/AndroidManifest.xml:16:22-62
+22
+23    <application android:debuggable="true" >
+23-->/Users/prahlad_kumar/Desktop/QIS_Android_Updated/openCVLibrary/build/intermediates/tmp/manifest/androidTest/debug/manifestMerger8680942950795979995.xml:7:5-9:19
+23-->/Users/prahlad_kumar/Desktop/QIS_Android_Updated/openCVLibrary/build/intermediates/tmp/manifest/androidTest/debug/manifestMerger8680942950795979995.xml:7:18-43
+24        <uses-library android:name="android.test.runner" />
+24-->/Users/prahlad_kumar/Desktop/QIS_Android_Updated/openCVLibrary/build/intermediates/tmp/manifest/androidTest/debug/manifestMerger8680942950795979995.xml:8:9-60
+24-->/Users/prahlad_kumar/Desktop/QIS_Android_Updated/openCVLibrary/build/intermediates/tmp/manifest/androidTest/debug/manifestMerger8680942950795979995.xml:8:23-57
+25    </application>
+26
+27</manifest>
