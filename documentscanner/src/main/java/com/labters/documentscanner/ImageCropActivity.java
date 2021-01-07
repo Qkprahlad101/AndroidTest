@@ -31,11 +31,14 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.labters.documentscanner.base.CropperErrorType;
 import com.labters.documentscanner.base.DocumentScanActivity;
 import com.labters.documentscanner.helpers.ScannerConstants;
@@ -68,6 +71,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Observable;
@@ -79,6 +83,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 public class ImageCropActivity extends DocumentScanActivity {
     private static final String BASE_URL = "http://192.180.1.86:8000/upload/";
@@ -88,6 +93,9 @@ public class ImageCropActivity extends DocumentScanActivity {
     private boolean isInverted, isMagic, isSharp;
     private ProgressBar progressBar;
     private Bitmap cropImage;
+    Button btnImageCrop, btnClose;
+    TextView wait;
+    LinearLayout toolbaar;
 
     Interpreter tflite;
     private  int imageSizeX;
@@ -126,8 +134,13 @@ public class ImageCropActivity extends DocumentScanActivity {
                                 if (cropImage != null) {
                                     ScannerConstants.selectedImageBitmap = cropImage;
                                     filePath = saveToInternalStorage(cropImage);
-
+//                                    sharpen();
+//                                    magicColor();
                                     new MyAsyncTask().execute();
+                                    btnImageCrop.setVisibility(View.GONE);
+                                    btnClose.setVisibility(View.GONE);
+                                    wait.setVisibility(View.VISIBLE);
+                                    toolbaar.setVisibility(View.GONE);
 
 //                                    setResult(RESULT_OK);
 //                                    finish();
@@ -420,11 +433,10 @@ public class ImageCropActivity extends DocumentScanActivity {
             Response response = null;
             response = client.newCall(request).execute();
             resStr = response.body().string();
-            JSONObject Jobject = new JSONObject(resStr);
-//            JSONArray name = Jobject.getJSONArray("filename");
+//            JSONObject obj = new JSONObject(client.newCall(request).execute().body().string());
+//            String fname = (String)obj.get("filename");
 
-            //Toast.makeText(this, "Response from main Api: "+resStr, Toast.LENGTH_SHORT).show();
-            Log.d("mainAPI", "sendToMainApi: "+Jobject);
+            Log.d("mainAPI", "sendToMainApi: "+resStr);
             new Handler().postDelayed(new Runnable() {
 
                 @Override
@@ -489,8 +501,15 @@ public class ImageCropActivity extends DocumentScanActivity {
     }
 
     private void initView() {
-        Button btnImageCrop = findViewById(R.id.btnImageCrop);
-        Button btnClose = findViewById(R.id.btnClose);
+        btnImageCrop = findViewById(R.id.btnImageCrop);
+        btnClose = findViewById(R.id.btnClose);
+        wait = findViewById(R.id.wait);
+        toolbaar = findViewById(R.id.toolbaar);
+
+        toolbaar.setVisibility(View.VISIBLE);
+        btnImageCrop.setVisibility(View.VISIBLE);
+        btnClose.setVisibility(View.VISIBLE);
+
         holderImageCrop = findViewById(R.id.holderImageCrop);
         imageView = findViewById(R.id.imageView);
         ImageView ivRotate = findViewById(R.id.ivRotate);
